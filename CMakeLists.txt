@@ -41,7 +41,7 @@ INCLUDE_DIRECTORIES(
 )
 
 SET(Protonect_src
-  Pupsi.cpp
+  main.cpp
 )
 
 SET(Protonect_LIBRARIES
@@ -65,6 +65,7 @@ IF(ENABLE_OPENGL)
     LIST(APPEND Protonect_DLLS ${GLFW3_DLL})
     LIST(APPEND Protonect_src
       viewer.cpp
+      Algorithms.cpp
       ${flextGL_SOURCES}
     )
     LIST(APPEND Protonect_LIBRARIES
@@ -75,21 +76,21 @@ IF(ENABLE_OPENGL)
   ENDIF()
 ENDIF(ENABLE_OPENGL)
 
-ADD_EXECUTABLE(Pupsi
+ADD_EXECUTABLE(main
   ${Protonect_src}
 )
 
-TARGET_LINK_LIBRARIES(Pupsi
+TARGET_LINK_LIBRARIES(main
   ${OpenCV_LIBS}
   ${Protonect_LIBRARIES}
 )
 
 IF(WIN32)
-  INSTALL(TARGETS Pupsi DESTINATION bin)
+  INSTALL(TARGETS main DESTINATION bin)
   LIST(REMOVE_DUPLICATES Protonect_DLLS)
   FOREACH(FILEI ${Protonect_DLLS})
-    ADD_CUSTOM_COMMAND(TARGET Pupsi POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${FILEI} $<TARGET_FILE_DIR:Pupsi>
+    ADD_CUSTOM_COMMAND(TARGET main POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${FILEI} $<TARGET_FILE_DIR:main>
     )
   ENDFOREACH(FILEI)
   INSTALL(FILES ${Protonect_DLLS} DESTINATION bin)
