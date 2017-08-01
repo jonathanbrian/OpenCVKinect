@@ -34,6 +34,7 @@ ELSE()
   FIND_PACKAGE(freenect2 REQUIRED)
   # Out-of-tree build will have to have DLLs manually copied.
 ENDIF()
+find_package(OpenCV REQUIRED COMPONENTS core imgproc highgui)
 
 INCLUDE_DIRECTORIES(
   ${freenect2_INCLUDE_DIR}
@@ -41,6 +42,7 @@ INCLUDE_DIRECTORIES(
 )
 
 SET(Protonect_src
+  Algorithms.cpp
   main.cpp
 )
 
