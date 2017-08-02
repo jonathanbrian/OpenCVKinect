@@ -1,13 +1,21 @@
 //! [headers]
+//C
 #include <iostream>
 #include <stdio.h>
 #include <iomanip>
 #include <time.h>
 #include <signal.h>
 
+//opencv
 #include <opencv2/opencv.hpp>
 #include <opencv2/flann.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/video/background_segm.hpp>
+//C++
+#include <iostream>
+#include <sstream>
 
+//Libfreenect
 #include <libfreenect2/libfreenect2.hpp>
 #include <libfreenect2/frame_listener_impl.h>
 #include <libfreenect2/registration.h>
@@ -15,11 +23,8 @@
 #include <libfreenect2/logger.h>
 //! [headers]
 
-#include "Algorithms.h"
-
 using namespace std;
 using namespace cv;
-
 
 bool protonect_shutdown = false; // Whether the running application should shut down.
 
@@ -27,7 +32,6 @@ void sigint_handler(int s)
 {
   protonect_shutdown = true;
 }
-
 
 int main()
 {
@@ -79,8 +83,9 @@ int main()
     dev->setIrAndDepthFrameListener(&listener);
     //! [listeners]
 
-	config.MinDepth = 1.0f;
-    config.MaxDepth = 2.8f;
+    //Depth threshold
+	config.MinDepth = 0.5f;
+    config.MaxDepth = 3.5f;
 	dev->setConfiguration(config);
 
     //! [start]
@@ -94,47 +99,49 @@ int main()
     libfreenect2::Registration* registration = new libfreenect2::Registration(dev->getIrCameraParams(), dev->getColorCameraParams());
     libfreenect2::Frame undistorted(512, 424, 4), registered(512, 424, 4), depth2rgb(1920, 1080 + 2, 4);
 
-    Mat rgbmat, depthmat, depthmatUndistorted, irmat, rgbd, rgbd2;
+    Mat rgbmat, depthmat, depthmatUndistorted, irmat, rgbd, rgbd2; //from Protonect
+
+    //Background extraction
+    Mat frame, fgMaskMOG2;
+    //MOG Background subtractor
+    Ptr<BackgroundSubtractor> pMOG2;
+
+    //create Background Subtractor objects
+    pMOG2 = createBackgroundSubtractorMOG2(500,16,false); //MOG2 approach
 
     //! [loop start]
     while(!protonect_shutdown)
     {
-
         listener.waitForNewFrame(frames);
         libfreenect2::Frame *rgb = frames[libfreenect2::Frame::Color];
         libfreenect2::Frame *ir = frames[libfreenect2::Frame::Ir];
         libfreenect2::Frame *depth = frames[libfreenect2::Frame::Depth];
-        //! [loop start]
 
+        //! [loop start]
         cv::Mat(rgb->height, rgb->width, CV_8UC4, rgb->data).copyTo(rgbmat);
         cv::Mat(ir->height, ir->width, CV_32FC1, ir->data).copyTo(irmat);
         cv::Mat(depth->height, depth->width, CV_32FC1, depth->data).copyTo(depthmat);
 
         //cv::imshow("rgb", rgbmat);
-        //cv::imshow("ir", irmat / 4096.0f);
-        cv::imshow("depth", depthmat / 4096.0f);
+        cv::Mat new_img;
+        cv::resize(rgbmat, new_img, cv::Size(rgb->width/2, rgb->height/2));
 
-        //! [registration]
-        registration->apply(rgb, depth, &undistorted, &registered, true, &depth2rgb);
-        //! [registration]
+        //frame = rgbmat/4096.0f;
+        frame = new_img;
+        //create GUI windows
+        namedWindow("Frame");
+        namedWindow("FG Mask MOG 2");
 
-        cv::Mat(undistorted.height, undistorted.width, CV_32FC1, undistorted.data).copyTo(depthmatUndistorted);
-        cv::Mat(registered.height, registered.width, CV_8UC4, registered.data).copyTo(rgbd);
-        cv::Mat(depth2rgb.height, depth2rgb.width, CV_32FC1, depth2rgb.data).copyTo(rgbd2);
+        //update the background model
+        pMOG2->apply(frame, fgMaskMOG2);
 
-        //cv::imshow("undistorted", depthmatUndistorted / 4096.0f);
-        //cv::imshow("registered", rgbd);
-        //cv::imshow("depth2RGB", rgbd2 / 4096.0f);
-
-
-		Algorithms myAlgorithms = Algorithms();
-		myAlgorithms.createContours(depthmat/4096.0f);
-
+        imshow("Frame", frame);
+        imshow("FG Mask MOG 2", fgMaskMOG2);
 
         int key = cv::waitKey(1);
         protonect_shutdown = protonect_shutdown || (key > 0 && ((key & 0xFF) == 27)); // shutdown on escape
+        //! [loop end]
 
-    //! [loop end]
         listener.release(frames);
     }
     //! [loop end]

@@ -34,7 +34,7 @@ ELSE()
   FIND_PACKAGE(freenect2 REQUIRED)
   # Out-of-tree build will have to have DLLs manually copied.
 ENDIF()
-find_package(OpenCV REQUIRED COMPONENTS core imgproc highgui)
+find_package(OpenCV REQUIRED COMPONENTS core imgproc highgui video)
 
 INCLUDE_DIRECTORIES(
   ${freenect2_INCLUDE_DIR}
@@ -42,8 +42,9 @@ INCLUDE_DIRECTORIES(
 )
 
 SET(Protonect_src
-  Algorithms.cpp
-  main.cpp
+  #Algorithms.cpp
+  #main.cpp
+  backgroundext.cpp
 )
 
 SET(Protonect_LIBRARIES
@@ -68,6 +69,7 @@ IF(ENABLE_OPENGL)
     LIST(APPEND Protonect_src
       viewer.cpp
       Algorithms.cpp
+      backgroundext.cpp
       ${flextGL_SOURCES}
     )
     LIST(APPEND Protonect_LIBRARIES
@@ -78,21 +80,21 @@ IF(ENABLE_OPENGL)
   ENDIF()
 ENDIF(ENABLE_OPENGL)
 
-ADD_EXECUTABLE(main
+ADD_EXECUTABLE(backgroundext
   ${Protonect_src}
 )
 
-TARGET_LINK_LIBRARIES(main
+TARGET_LINK_LIBRARIES(backgroundext
   ${OpenCV_LIBS}
   ${Protonect_LIBRARIES}
 )
 
 IF(WIN32)
-  INSTALL(TARGETS main DESTINATION bin)
+  INSTALL(TARGETS backgroundext DESTINATION bin)
   LIST(REMOVE_DUPLICATES Protonect_DLLS)
   FOREACH(FILEI ${Protonect_DLLS})
-    ADD_CUSTOM_COMMAND(TARGET main POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${FILEI} $<TARGET_FILE_DIR:main>
+    ADD_CUSTOM_COMMAND(TARGET backgroundext POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${FILEI} $<TARGET_FILE_DIR:backgroundext>
     )
   ENDFOREACH(FILEI)
   INSTALL(FILES ${Protonect_DLLS} DESTINATION bin)

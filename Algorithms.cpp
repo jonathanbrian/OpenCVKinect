@@ -46,7 +46,7 @@ void Algorithms::createContours(cv::Mat inputImg) {
 
 	for (size_t i = 0; i < contours.size(); i++) {
 		if (contours[i].size() > 300) {
-			boundRect[i] = boundingRect(Mat(contours[i]));
+			//boundRect[i] = boundingRect(Mat(contours[i]));
 			Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255),
 					rng.uniform(0, 255));
 			drawContours(drawing, contours, i, color, 2, 8, hierarchy, 0,
@@ -82,12 +82,14 @@ void Algorithms::createContours(cv::Mat inputImg) {
 	}
 
 	for (size_t i = 0; i < contours4.size(); i++) {
-		if (contours4[i].size() > 300) {
-			//boundRect[i] = boundingRect(Mat(contours4[i]));
+		if (contours4[i].size() > 350) {
+			boundRect[i] = boundingRect(Mat(contours4[i]));
 			Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255),
 					rng.uniform(0, 255));
 			drawContours(drawing4, contours4, i, color, 2, 8, hierarchy, 0,
 					Point());
+			rectangle(drawing4, boundRect[i].tl(), boundRect[i].br(), color, 2,
+					8, 0);
 		}
 
 	}
