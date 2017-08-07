@@ -11,6 +11,7 @@
 #include <opencv2/flann.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/video/background_segm.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 //C++
 #include <iostream>
 #include <sstream>
@@ -21,6 +22,8 @@
 #include <libfreenect2/registration.h>
 #include <libfreenect2/packet_pipeline.h>
 #include <libfreenect2/logger.h>
+
+#include "Algorithms.h"
 //! [headers]
 
 using namespace std;
@@ -90,7 +93,6 @@ int main()
 
     //! [start]
     dev->start();
-
     std::cout << "device serial: " << dev->getSerialNumber() << std::endl;
     std::cout << "device firmware: " << dev->getFirmwareVersion() << std::endl;
     //! [start]
@@ -103,11 +105,12 @@ int main()
 
     //Background extraction
     Mat frame, fgMaskMOG2;
+
     //MOG Background subtractor
     Ptr<BackgroundSubtractor> pMOG2;
 
     //create Background Subtractor objects
-    pMOG2 = createBackgroundSubtractorMOG2(500,16,false); //MOG2 approach
+    pMOG2 = createBackgroundSubtractorMOG2(250,16,false); //MOG2 approach
 
     //! [loop start]
     while(!protonect_shutdown)
@@ -122,21 +125,23 @@ int main()
         cv::Mat(ir->height, ir->width, CV_32FC1, ir->data).copyTo(irmat);
         cv::Mat(depth->height, depth->width, CV_32FC1, depth->data).copyTo(depthmat);
 
-        //cv::imshow("rgb", rgbmat);
         cv::Mat new_img;
-        cv::resize(rgbmat, new_img, cv::Size(rgb->width/2, rgb->height/2));
-
-        //frame = rgbmat/4096.0f;
+        //cv::resize(rgbmat, new_img, cv::Size(rgb->width/2, rgb->height/2));
+        new_img = depthmat;
         frame = new_img;
+
         //create GUI windows
         namedWindow("Frame");
-        namedWindow("FG Mask MOG 2");
+        //namedWindow("FG Mask MOG 2");
 
         //update the background model
-        pMOG2->apply(frame, fgMaskMOG2);
+        pMOG2->apply(frame, fgMaskMOG2,0);
 
-        imshow("Frame", frame);
-        imshow("FG Mask MOG 2", fgMaskMOG2);
+        imshow("Frame", frame/4096.0f);
+        //imshow("FG Mask MOG 2", fgMaskMOG2);
+
+        Algorithms myAlgorithms = Algorithms();
+        myAlgorithms.createContours(fgMaskMOG2);
 
         int key = cv::waitKey(1);
         protonect_shutdown = protonect_shutdown || (key > 0 && ((key & 0xFF) == 27)); // shutdown on escape

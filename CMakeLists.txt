@@ -42,7 +42,7 @@ INCLUDE_DIRECTORIES(
 )
 
 SET(Protonect_src
-  #Algorithms.cpp
+  Algorithms.cpp
   #main.cpp
   backgroundext.cpp
 )
